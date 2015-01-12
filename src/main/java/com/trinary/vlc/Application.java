@@ -9,15 +9,23 @@ import uk.co.caprica.vlcj.binding.LibVlc;
 import uk.co.caprica.vlcj.runtime.RuntimeUtil;
 
 public class Application {
-	protected final static String LIB_LOCATION="/Applications/VLC.app/Contents/MacOS/lib";
+	protected final static String LIB_MAC = "/Applications/VLC.app/Contents/MacOS/lib";
+	protected final static String LIB_WIN = "C:\\Program Files\\VLC\\lib";
 
-	public static void main(String[] args) {
-		NativeLibrary.addSearchPath(RuntimeUtil.getLibVlcLibraryName(), LIB_LOCATION);
+	public static void main(String[] args) throws Exception {
+		if (OS.isMac()) {
+			NativeLibrary.addSearchPath(RuntimeUtil.getLibVlcLibraryName(), LIB_MAC);
+		} else if (OS.isWindows()) {
+			throw new Exception("Windows is not currently supported");
+		} else if (OS.isUnix()) {
+			throw new Exception("Linux/Unix is not currently supported");
+		}
 		Native.loadLibrary(RuntimeUtil.getLibVlcLibraryName(), LibVlc.class);
 		
-		final Player player = new Player("aftv-200X69.png");
-		player.addVideo("test1.mp4");
-		player.addVideo("test2.mp4");
+		final Player player = new Player();
+		player.setIdParserPattern("([0-9A-Z]+).*");
+		player.setPlaylistId("IKKICON-AMV");
+		player.addPlaylist(new M3UPlaylist("AMV Playlist.m3u", "([0-9A-Z]+).*"));
 		
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run() {

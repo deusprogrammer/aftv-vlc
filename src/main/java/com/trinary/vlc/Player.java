@@ -10,9 +10,12 @@ import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
@@ -31,6 +34,7 @@ public class Player implements KeyListener {
 	protected EmbeddedMediaPlayer mediaPlayer;
 	protected MediaListPlayer mediaListPlayer;
 	protected MediaList playlist;
+	protected Pattern idParser;
 	
 	protected PrintWriter log;
 	
@@ -38,13 +42,25 @@ public class Player implements KeyListener {
 	protected JPanel panel;
 	protected Canvas canvas;
 	
-	public static void sendEvent(String event, String id) {
+	protected String pid = "0";
+	
+	public void sendEvent(String event, String id) {
 		Client client = Client.create();
 		 
 		WebResource webResource = client
-		   .resource("http://localhost:8080/AFTSurvey/test/event");
+		   .resource("http://localhost:8080/AFTSurvey/event/trigger");
+		
+		if (idParser != null) {
+			Matcher idParserMatcher = idParser.matcher(id);
+			
+			if (idParserMatcher.find()) {
+				id = idParserMatcher.group(1);
+			}
+		}
+		
+		log.println("ID: " + id);
  
-		String input = "{\"event\":\""+ event + "\",\"id\":\"" + id + "\"}";
+		String input = String.format("{\"event\":\"%s\",\"vid\":\"%s\",\"pid\":\"%s\"}", event, id, pid);
  
 		ClientResponse response = webResource.type("application/json")
 		   .post(ClientResponse.class, input);
@@ -55,7 +71,7 @@ public class Player implements KeyListener {
 		}
 	}
 	
-	public static void toggleFullScreen(Window window) {
+	public static void toggleOSXFullscreen(Window window) {
         try {
             Class<?> util = Class.forName("com.apple.eawt.Application");
             Object o = util.newInstance();
@@ -114,7 +130,9 @@ public class Player implements KeyListener {
                 frame) {
             @Override
             public void enterFullScreenMode() {
-                toggleFullScreen(frame);
+            	if (OS.isMac()) {
+            		toggleOSXFullscreen(frame);
+            	}
             }
         };
         
@@ -134,9 +152,11 @@ public class Player implements KeyListener {
         frame.setSize(1050, 600);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         
-        enableOSXFullscreen(frame);
+        if (OS.isMac()) {
+        	enableOSXFullscreen(frame);
+        }
+        
         frame.setVisible(true);
-        //toggleFullScreen(frame);
         
         mediaListPlayer.addMediaListPlayerEventListener(new MediaListPlayerEventListener() {
 
@@ -195,11 +215,25 @@ public class Player implements KeyListener {
     	playlist.addMedia(file);
     }
     
+    public void addPlaylist(Playlist playlist) {
+    	for (String filename : playlist.getFileNames()) {
+    		addVideo(filename);
+    	}
+    }
+    
     public void setLogo(String file, int x, int y) {
     	mediaPlayer.setLogoFile(file);
     	mediaPlayer.setLogoLocation(x, y);
     	mediaPlayer.setLogoOpacity(255);
     }
+    
+	public void setIdParserPattern(String pattern) {
+		idParser = Pattern.compile(pattern);
+	}
+	
+	public void setPlaylistId(String pid) {
+		this.pid = pid;
+	}
 
 	public void keyTyped(KeyEvent e) {
 		// TODO Auto-generated method stub
@@ -222,10 +256,10 @@ public class Player implements KeyListener {
 			mediaPlayer.setVolume(volume - 10);
 			break;
 		case KeyEvent.VK_A:
-			mediaListPlayer.playNext();
+			mediaListPlayer.playPrevious();
 			break;
 		case KeyEvent.VK_D:
-			mediaListPlayer.playPrevious();
+			mediaListPlayer.playNext();
 			break;
 		case KeyEvent.VK_P:
 			if (isPlaying) {
