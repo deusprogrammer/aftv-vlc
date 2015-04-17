@@ -10,15 +10,16 @@ import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
-import java.util.regex.Matcher;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+
+import com.trinary.util.StringUtil;
 
 import uk.co.caprica.vlcj.binding.internal.libvlc_media_t;
 import uk.co.caprica.vlcj.medialist.MediaList;
@@ -30,11 +31,19 @@ import uk.co.caprica.vlcj.player.list.MediaListPlayer;
 import uk.co.caprica.vlcj.player.list.MediaListPlayerEventListener;
 import uk.co.caprica.vlcj.player.list.MediaListPlayerMode;
 
-public class Player implements KeyListener {
+public class AFTVPlayerImpl implements KeyListener, AFTVPlayer {
+	@Autowired
+	@Qualifier("restTriggerService")
+	RESTTriggerService restService;
+	
+	protected String filenameTemplate = "{uuid} - {trackNumber} - {artist} - {trackname}";
+	
 	protected EmbeddedMediaPlayer mediaPlayer;
 	protected MediaListPlayer mediaListPlayer;
-	protected MediaList playlist;
+	protected MediaList mediaList;
 	protected Pattern idParser;
+	
+	protected Playlist playlist;
 	
 	protected PrintWriter log;
 	
@@ -42,34 +51,7 @@ public class Player implements KeyListener {
 	protected JPanel panel;
 	protected Canvas canvas;
 	
-	protected String pid = "0";
-	
-	public void sendEvent(String event, String id) {
-		Client client = Client.create();
-		 
-		WebResource webResource = client
-		   .resource("http://localhost:8080/AFTSurvey/event/trigger");
-		
-		if (idParser != null) {
-			Matcher idParserMatcher = idParser.matcher(id);
-			
-			if (idParserMatcher.find()) {
-				id = idParserMatcher.group(1);
-			}
-		}
-		
-		log.println("ID: " + id);
- 
-		String input = String.format("{\"event\":\"%s\",\"vid\":\"%s\",\"pid\":\"%s\"}", event, id, pid);
- 
-		ClientResponse response = webResource.type("application/json")
-		   .post(ClientResponse.class, input);
- 
-		if (response.getStatus() != 201) {
-			throw new RuntimeException("Failed : HTTP error code : "
-			     + response.getStatus());
-		}
-	}
+	protected String pid = "";
 	
 	public static void toggleOSXFullscreen(Window window) {
         try {
@@ -87,7 +69,7 @@ public class Player implements KeyListener {
         }
     }
 
-    public static void enableOSXFullscreen(Window window) {
+    protected static void enableOSXFullscreen(Window window) {
         try {
             Class<?> util = Class.forName("com.apple.eawt.FullScreenUtilities");
 
@@ -101,11 +83,11 @@ public class Player implements KeyListener {
         }
     }
     
-    public Player() {
+    public AFTVPlayerImpl() {
     	this(null);
     }
 	
-    public Player(String logoFile) {
+    public AFTVPlayerImpl(String logoFile) {
     	try {
 			log = new PrintWriter("out.log", "UTF-8");
 		} catch (FileNotFoundException e) {
@@ -146,8 +128,8 @@ public class Player implements KeyListener {
         }
         mediaListPlayer = mediaPlayerFactory.newMediaListPlayer();
         mediaListPlayer.setMediaPlayer(mediaPlayer);
-        playlist = mediaPlayerFactory.newMediaList();
-        mediaListPlayer.setMediaList(playlist);
+        mediaList = mediaPlayerFactory.newMediaList();
+        mediaListPlayer.setMediaList(mediaList);
         frame.setLocation(100, 100);
         frame.setSize(1050, 600);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -166,12 +148,15 @@ public class Player implements KeyListener {
 					libvlc_media_t item, String itemMrl) {
 				int beginIndex = itemMrl.lastIndexOf("/") + 1;
 				int endIndex   = itemMrl.lastIndexOf(".");
-				String id = itemMrl.substring(beginIndex, endIndex);
+				String filename = itemMrl.substring(beginIndex, endIndex);
 				
-				log.println("NEXT ITEM: " + id);
-				log.flush();
-				
-				sendEvent("change", id);
+				Map<String, String> map = StringUtil.extrapolateString(filenameTemplate, filename);
+				for (ContestEntry entry : playlist.getEntries()) {
+					if (entry.getUuid().equals(map.get("uuid"))) {
+						restService.sendTrigger(playlist, entry, "next");
+						return;
+					}
+				}
 			}
 
 			public void stopped(MediaListPlayer mediaListPlayer) {}
@@ -196,6 +181,13 @@ public class Player implements KeyListener {
         });
     }
     
+	public void setFilenameTemplate(String filenameTemplate) {
+		this.filenameTemplate = filenameTemplate;
+	}
+    
+    /* (non-Javadoc)
+	 * @see com.trinary.vlc.AFTVPlayer#setLoop(boolean)
+	 */
     public void setLoop(boolean loop) {
     	MediaListPlayerMode mode;
     	if (loop) {
@@ -207,33 +199,43 @@ public class Player implements KeyListener {
     	mediaListPlayer.setMode(mode);
     }
     
+    /* (non-Javadoc)
+	 * @see com.trinary.vlc.AFTVPlayer#play()
+	 */
     public void play() {
     	mediaListPlayer.play();
     }
     
+    /* (non-Javadoc)
+	 * @see com.trinary.vlc.AFTVPlayer#addVideo(java.lang.String)
+	 */
     public void addVideo(String file) {
-    	playlist.addMedia(file);
+    	mediaList.addMedia(file);
     }
     
+    /* (non-Javadoc)
+	 * @see com.trinary.vlc.AFTVPlayer#setPlaylist(com.trinary.vlc.Playlist)
+	 */
+    public void setPlaylist(Playlist playlist) {
+    	this.mediaList.clear();
+    	addPlaylist(playlist);
+    }
+    
+    /* (non-Javadoc)
+	 * @see com.trinary.vlc.AFTVPlayer#addPlaylist(com.trinary.vlc.Playlist)
+	 */
     public void addPlaylist(Playlist playlist) {
+    	if (this.mediaList.size() == 0) {
+    		this.pid = playlist.getPid();
+    	}
+    	
+    	restService.createContest((Contest)playlist);
+    	
     	for (String filename : playlist.getFileNames()) {
     		addVideo(filename);
     	}
+    	this.playlist = playlist;
     }
-    
-    public void setLogo(String file, int x, int y) {
-    	mediaPlayer.setLogoFile(file);
-    	mediaPlayer.setLogoLocation(x, y);
-    	mediaPlayer.setLogoOpacity(255);
-    }
-    
-	public void setIdParserPattern(String pattern) {
-		idParser = Pattern.compile(pattern);
-	}
-	
-	public void setPlaylistId(String pid) {
-		this.pid = pid;
-	}
 
 	public void keyTyped(KeyEvent e) {
 		// TODO Auto-generated method stub

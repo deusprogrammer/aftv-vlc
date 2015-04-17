@@ -1,6 +1,7 @@
 #EXTM3U
-#EXTINF:338,10D - 1st Place - 9 - OpJens - Fading.mpeg
-/Volumes/Hachune/AMV Contest/10D - 1st Place - 9 - OpJens - Fading.mpeg
+#PID:IKKICON_AMV_2015
+#EXTINF:338,10D - 9 - OpJens - Fading.mpeg
+/Volumes/Hachune/AMV Contest/10D - 9 - OpJens - Fading.mpeg
 #EXTINF:228,Maboroshi Studio  - The Will to Win
 /Volumes/Hachune/AMV Contest/1D - 24 - Maboroshi Studio - The Will to Win.mp4
 #EXTINF:189,drewaconclusion  - Sleepy Sun Bears
@@ -15,13 +16,7 @@
 /Volumes/Hachune/AMV Contest/6D - 22 - Shori Squared - Saber la Vida.mp4
 #EXTINF:185,7D - 16 - BecauseImBored1 - Otaku Paradise .mp4
 /Volumes/Hachune/AMV Contest/7D - 16 - BecauseImBored1 - Otaku Paradise .mp4
-#EXTINF:306,8D - 3rd Place - 1 - Kidd The Maniac - When It Rains....mp4
-/Volumes/Hachune/AMV Contest/8D - 3rd Place - 1 - Kidd The Maniac - When It Rains....mp4
-#EXTINF:254,9D - 2nd Place - 10 - Amaterasu - Forever Is A Long Long Time.mp4
-/Volumes/Hachune/AMV Contest/9D - 2nd Place - 10 - Amaterasu - Forever Is A Long Long Time.mp4
-#EXTINF:235,happy  - happy day
-/Volumes/Hachune/AMV Contest/corupting religion.wmv
-#EXTINF:237,Final fantasy bridges.avi
-/Volumes/Hachune/AMV Contest/Final fantasy bridges.avi
-#EXTINF:197,rocky.mpeg
-/Volumes/Hachune/AMV Contest/rocky.mpeg
+#EXTINF:306,8D - 1 - Kidd The Maniac - When It Rains....mp4
+/Volumes/Hachune/AMV Contest/8D - 1 - Kidd The Maniac - When It Rains....mp4
+#EXTINF:254,9D - 10 - Amaterasu - Forever Is A Long Long Time.mp4
+/Volumes/Hachune/AMV Contest/9D - 10 - Amaterasu - Forever Is A Long Long Time.mp4

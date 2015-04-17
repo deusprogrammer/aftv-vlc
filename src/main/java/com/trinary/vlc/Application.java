@@ -22,15 +22,15 @@ public class Application {
 		}
 		Native.loadLibrary(RuntimeUtil.getLibVlcLibraryName(), LibVlc.class);
 		
-		final Player player = new Player();
-		player.setIdParserPattern("([0-9A-Z]+).*");
-		player.setPlaylistId("IKKICON-AMV");
+		final AFTVPlayer player = AFTVPlayerFactory.getPlayer();
 		player.addPlaylist(new M3UPlaylist("AMV Playlist.m3u", "([0-9A-Z]+).*"));
 		
+		/*
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
 				player.play();
 			}
 		});
+		*/
 	}
 }
