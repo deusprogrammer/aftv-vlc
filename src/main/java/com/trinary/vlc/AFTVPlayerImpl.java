@@ -16,8 +16,8 @@ import java.util.regex.Pattern;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
+//import org.springframework.beans.factory.annotation.Autowired;
+//import org.springframework.beans.factory.annotation.Qualifier;
 
 import com.trinary.util.StringUtil;
 
@@ -32,9 +32,12 @@ import uk.co.caprica.vlcj.player.list.MediaListPlayerEventListener;
 import uk.co.caprica.vlcj.player.list.MediaListPlayerMode;
 
 public class AFTVPlayerImpl implements KeyListener, AFTVPlayer {
+	/*
 	@Autowired
 	@Qualifier("restTriggerService")
 	RESTTriggerService restService;
+	*/
+	RESTTriggerService restService = new RESTTriggerServiceImpl();
 	
 	protected String filenameTemplate = "{uuid} - {trackNumber} - {artist} - {trackname}";
 	
@@ -149,6 +152,7 @@ public class AFTVPlayerImpl implements KeyListener, AFTVPlayer {
 				int beginIndex = itemMrl.lastIndexOf("/") + 1;
 				int endIndex   = itemMrl.lastIndexOf(".");
 				String filename = itemMrl.substring(beginIndex, endIndex);
+				filename = filename.replaceAll("%20", " ");
 				
 				Map<String, String> map = StringUtil.extrapolateString(filenameTemplate, filename);
 				for (ContestEntry entry : playlist.getEntries()) {

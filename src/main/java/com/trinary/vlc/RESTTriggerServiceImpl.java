@@ -11,15 +11,21 @@ import org.codehaus.jackson.map.ObjectMapper;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
-import com.trinary.aftv.commons.Event;
+import com.trinary.aftv.commons.EventDTO;
 import com.trinary.util.StringUtil;
 
 public class RESTTriggerServiceImpl implements RESTTriggerService {
-	protected String protocol;
-	protected String hostname;
-	protected String port;
-	protected String publishUriTemplate;
-	protected String createUriTemplate;
+//	protected String protocol;
+//	protected String hostname;
+//	protected String port;
+//	protected String publishUriTemplate;
+//	protected String createUriTemplate;
+	
+	protected String protocol           = "http";
+	protected String hostname           = "localhost";
+	protected String port               = "8080";
+	protected String publishUriTemplate = "/aftv-backend/v1/contest/{contestId}/publish";
+	protected String createUriTemplate  = "/aftv-backend/v1/contest/";
 	
 	public void createContest(Contest contest) {
 		Client client = Client.create();
@@ -69,17 +75,38 @@ public class RESTTriggerServiceImpl implements RESTTriggerService {
 		WebResource webResource = client
 		   .resource(url);
 		
-		Event event = new Event();
+		EventDTO event = new EventDTO();
 		event.setContestId(contest.getUuid());
 		event.setEntryId(entry.getUuid());
 		event.setEventType(trigger);
+		
+		ObjectMapper mapper = new ObjectMapper();
+		String jsonString = null;
+		try {
+			jsonString = mapper.typedWriter(EventDTO.class).writeValueAsString(event);
+		} catch (JsonGenerationException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} catch (JsonMappingException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
  
-		ClientResponse response = webResource.type("application/json")
-		   .post(ClientResponse.class, event);
- 
-		if (response.getStatus() != 201) {
-			throw new RuntimeException("Failed : HTTP error code : "
-			     + response.getStatus());
+		try {
+			ClientResponse response = webResource.type("application/json")
+			   .post(ClientResponse.class, jsonString);
+			
+			System.out.println("RESPONSE: " + response.getStatus());
+	 
+			if (response.getStatus() >= 200 && response.getStatus() < 300) {
+				throw new RuntimeException("Failed : HTTP error code : "
+				     + response.getStatus());
+			}
+		} catch (Exception e) {
+			throw new RuntimeException("Trigger post failed!", e);
 		}
 	}
 	
