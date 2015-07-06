@@ -101,7 +101,7 @@ public class RESTTriggerServiceImpl implements RESTTriggerService {
 			
 			System.out.println("RESPONSE: " + response.getStatus());
 	 
-			if (response.getStatus() >= 200 && response.getStatus() < 300) {
+			if (response.getStatus() < 200 || response.getStatus() > 300) {
 				throw new RuntimeException("Failed : HTTP error code : "
 				     + response.getStatus());
 			}
