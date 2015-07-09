@@ -114,7 +114,9 @@ public class RESTServiceImpl implements RESTService {
 		
 		EventDTO event = new EventDTO();
 		event.setContestId(contest.getUuid());
-		event.setEntryId(entry.getUuid());
+		if (entry != null) {
+			event.setEntryId(entry.getUuid());
+		}
 		event.setEventType(trigger);
 		
 		ObjectMapper mapper = new ObjectMapper();

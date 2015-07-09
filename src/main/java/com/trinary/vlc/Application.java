@@ -24,7 +24,7 @@ public class Application {
 		}
 		Native.loadLibrary(RuntimeUtil.getLibVlcLibraryName(), LibVlc.class);
 		
-		Playlist playlist = new M3UPlaylist("AMV Playlist.m3u", "([0-9A-Z]+).*");
+		final Playlist playlist = new M3UPlaylist("AMV Playlist.m3u", "([0-9A-Z]+).*");
 				
     	// Create the contest on the back end.
     	restService.createContest((Contest)playlist);
@@ -51,6 +51,37 @@ public class Application {
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
 				player.play();
+			}
+		});
+		
+		// Start heartbeat
+		SwingUtilities.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				while (true) {					
+					// Send heartbeat event
+					if (player.isPlaying()) {
+						PlayerEvent event = new PlayerEvent();
+						event.setPlaylist(playlist);
+						event.setEntry(null);
+						event.setType(PlayerEventType.HEARTBEAT);
+						restService.sendTrigger(event);
+						
+						// Sleep for 10 seconds
+						try {
+							Thread.sleep(10000);
+						} catch (InterruptedException e) {
+							continue;
+						}
+					} else {
+						// Sleep for 1 second
+						try {
+							Thread.sleep(1000);
+						} catch (InterruptedException e) {
+							continue;
+						}
+					}
+				}
 			}
 		});
 	}

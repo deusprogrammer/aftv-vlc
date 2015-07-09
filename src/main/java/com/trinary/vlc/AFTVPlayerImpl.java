@@ -194,6 +194,10 @@ public abstract class AFTVPlayerImpl implements KeyListener, AFTVPlayer {
     	mediaListPlayer.play();
     }
     
+    public boolean isPlaying() {
+    	return mediaListPlayer.isPlaying();
+    }
+    
     /* (non-Javadoc)
 	 * @see com.trinary.vlc.AFTVPlayer#addVideo(java.lang.String)
 	 */
