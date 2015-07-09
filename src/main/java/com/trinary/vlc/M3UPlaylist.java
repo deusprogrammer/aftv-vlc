@@ -59,6 +59,7 @@ public class M3UPlaylist extends Playlist {
 				String s = url.substring(beginIndex, endIndex);
 				
 				Map<String, String> map = StringUtil.extrapolateString("{uuid} - {trackNumber} - {artist} - {trackname}", s);
+				
 				entries.add(new PlaylistEntry(map.get("uuid"), map.get("trackname"), map.get("artist"), url, Integer.getInteger(lengthInSeconds)));
 			}
 		}

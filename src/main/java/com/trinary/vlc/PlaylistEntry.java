@@ -4,10 +4,10 @@ import org.codehaus.jackson.map.annotate.JsonSerialize;
 
 @JsonSerialize(as=ContestEntry.class)
 public class PlaylistEntry implements ContestEntry {
-	protected String id;
-	protected String title;
-	protected String artist;
-	protected String url;
+	protected String  id;
+	protected String  title;
+	protected String  artist;
+	protected String  url;
 	protected Integer lengthInSeconds;
 	
 	protected String description = "A Video";

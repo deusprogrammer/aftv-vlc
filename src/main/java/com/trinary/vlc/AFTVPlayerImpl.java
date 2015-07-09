@@ -31,14 +31,7 @@ import uk.co.caprica.vlcj.player.list.MediaListPlayer;
 import uk.co.caprica.vlcj.player.list.MediaListPlayerEventListener;
 import uk.co.caprica.vlcj.player.list.MediaListPlayerMode;
 
-public class AFTVPlayerImpl implements KeyListener, AFTVPlayer {
-	/*
-	@Autowired
-	@Qualifier("restTriggerService")
-	RESTTriggerService restService;
-	*/
-	RESTTriggerService restService = new RESTTriggerServiceImpl();
-	
+public abstract class AFTVPlayerImpl implements KeyListener, AFTVPlayer {	
 	protected String filenameTemplate = "{uuid} - {trackNumber} - {artist} - {trackname}";
 	
 	protected EmbeddedMediaPlayer mediaPlayer;
@@ -149,18 +142,7 @@ public class AFTVPlayerImpl implements KeyListener, AFTVPlayer {
 
 			public void nextItem(MediaListPlayer mediaListPlayer,
 					libvlc_media_t item, String itemMrl) {
-				int beginIndex = itemMrl.lastIndexOf("/") + 1;
-				int endIndex   = itemMrl.lastIndexOf(".");
-				String filename = itemMrl.substring(beginIndex, endIndex);
-				filename = filename.replaceAll("%20", " ");
-				
-				Map<String, String> map = StringUtil.extrapolateString(filenameTemplate, filename);
-				for (ContestEntry entry : playlist.getEntries()) {
-					if (entry.getUuid().equals(map.get("uuid"))) {
-						restService.sendTrigger(playlist, entry, "next");
-						return;
-					}
-				}
+				handleEvent(buildEvent(itemMrl));
 			}
 
 			public void stopped(MediaListPlayer mediaListPlayer) {}
@@ -184,6 +166,8 @@ public class AFTVPlayerImpl implements KeyListener, AFTVPlayer {
         	
         });
     }
+    
+    public abstract void handleEvent(PlayerEvent event);
     
 	public void setFilenameTemplate(String filenameTemplate) {
 		this.filenameTemplate = filenameTemplate;
@@ -233,8 +217,6 @@ public class AFTVPlayerImpl implements KeyListener, AFTVPlayer {
     		this.pid = playlist.getPid();
     	}
     	
-    	restService.createContest((Contest)playlist);
-    	
     	for (String filename : playlist.getFileNames()) {
     		addVideo(filename);
     	}
@@ -274,5 +256,32 @@ public class AFTVPlayerImpl implements KeyListener, AFTVPlayer {
 				mediaListPlayer.play();
 			}
 		}
+	}
+	
+	protected PlayerEvent buildEvent(String itemMrl) {
+		int beginIndex = itemMrl.lastIndexOf("/") + 1;
+		int endIndex   = itemMrl.lastIndexOf(".");
+		String filename = itemMrl.substring(beginIndex, endIndex);
+		filename = filename.replaceAll("%20", " ");
+		
+		Map<String, String> map = StringUtil.extrapolateString(filenameTemplate, filename);
+		PlaylistEntry foundEntry = null;
+		
+		for (PlaylistEntry entry : playlist.getPlaylistEntries()) {
+			if (entry.getUuid().equals(map.get("uuid"))) {
+				foundEntry = entry;
+				break;
+			}
+		}
+		
+		PlayerEvent event = null;
+		if (foundEntry != null) {
+			event = new PlayerEvent();
+			event.setPlaylist(playlist);
+			event.setEntry(foundEntry);
+			event.setType(PlayerEventType.NEXT);
+		}
+		
+		return event;
 	}
 }
